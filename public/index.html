@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ne">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Password Vault</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="authScreen" class="screen">
+  <div class="auth-card">
+    <div class="brand">
+      <span class="brand-mark">&#9679;</span>
+      <h1>Vault</h1>
+    </div>
+    <p class="tagline">तपाईंको पासवर्डहरू, एउटै ठाउँमा, सबै device मा।</p>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="login">लगइन</button>
+      <button class="tab" data-tab="register">नयाँ खाता</button>
+    </div>
+
+    <form id="loginForm" class="auth-form">
+      <label>Username
+        <input type="text" name="username" autocomplete="username" required>
+      </label>
+      <label>Master Password
+        <input type="password" name="password" autocomplete="current-password" required>
+      </label>
+      <button type="submit" class="primary">लगइन गर्नुहोस्</button>
+      <p class="error" id="loginError"></p>
+    </form>
+
+    <form id="registerForm" class="auth-form hidden">
+      <label>Username छान्नुहोस्
+        <input type="text" name="username" autocomplete="username" required>
+      </label>
+      <label>Master Password बनाउनुहोस् (कम्तीमा ८ अक्षर)
+        <input type="password" name="password" autocomplete="new-password" minlength="8" required>
+      </label>
+      <p class="hint">यो password बिर्सनुभयो भने vault भित्रको डाटा फिर्ता ल्याउन सकिँदैन — सुरक्षित ठाउँमा लेखेर राख्नुहोस्।</p>
+      <button type="submit" class="primary">खाता बनाउनुहोस्</button>
+      <p class="error" id="registerError"></p>
+    </form>
+  </div>
+</div>
+
+<div id="vaultScreen" class="screen hidden">
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">&#9679;</span>
+      <span class="brand-name">Vault</span>
+    </div>
+    <div class="topbar-right">
+      <span id="whoami" class="whoami"></span>
+      <button id="logoutBtn" class="ghost">लगआउट</button>
+    </div>
+  </header>
+
+  <main class="content">
+    <div class="content-header">
+      <input type="search" id="searchBox" placeholder="खोज्नुहोस्...">
+      <button id="addBtn" class="primary">+ नयाँ</button>
+    </div>
+
+    <div id="emptyState" class="empty-state hidden">
+      <p>अहिलेसम्म कुनै password सुरक्षित गरिएको छैन।</p>
+      <button class="primary" id="emptyAddBtn">पहिलो password थप्नुहोस्</button>
+    </div>
+
+    <ul id="vaultList" class="vault-list"></ul>
+  </main>
+</div>
+
+<div id="itemModal" class="modal-overlay hidden">
+  <div class="modal">
+    <h2 id="modalTitle">नयाँ Password</h2>
+    <form id="itemForm">
+      <input type="hidden" name="id">
+      <label>शीर्षक (जस्तै: Gmail, Facebook)
+        <input type="text" name="title" required>
+      </label>
+      <label>Username / Email
+        <input type="text" name="siteUsername">
+      </label>
+      <label>Password
+        <div class="password-row">
+          <input type="password" name="password" id="itemPasswordInput" required>
+          <button type="button" id="togglePasswordBtn" class="icon-btn">देखाउनुहोस्</button>
+          <button type="button" id="genPasswordBtn" class="icon-btn">Generate</button>
+        </div>
+      </label>
+      <label>Website URL
+        <input type="url" name="url" placeholder="https://">
+      </label>
+      <label>Notes
+        <textarea name="notes" rows="2"></textarea>
+      </label>
+      <div class="modal-actions">
+        <button type="button" id="deleteItemBtn" class="danger hidden">मेट्नुहोस्</button>
+        <div class="modal-actions-right">
+          <button type="button" id="cancelModalBtn" class="ghost">रद्द</button>
+          <button type="submit" class="primary">सुरक्षित गर्नुहोस्</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
