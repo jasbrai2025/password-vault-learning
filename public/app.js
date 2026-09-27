@@ -112,16 +112,24 @@ function renderVaultList(filter = '') {
   filtered.forEach((item) => {
     const li = document.createElement('li');
     li.className = 'vault-item';
+    const openLink = item.url
+      ? `<a class="icon-btn" href="${escapeHtml(normalizeUrl(item.url))}" target="_blank" rel="noopener noreferrer" data-action="open">🔗 Open</a>`
+      : '';
     li.innerHTML = `
       <div class="vault-item-main">
         <div class="vault-item-title">${escapeHtml(item.title)}</div>
         <div class="vault-item-sub">${escapeHtml(item.siteUsername || '')}</div>
       </div>
       <div class="vault-item-actions">
+        ${openLink}
         <button class="icon-btn" data-action="copy" data-id="${item.id}">Copy</button>
       </div>
     `;
     li.addEventListener('click', (e) => {
+      if (e.target.dataset.action === 'open') {
+        e.stopPropagation();
+        return; // let the link open normally in a new tab
+      }
       if (e.target.dataset.action === 'copy') {
         e.stopPropagation();
         navigator.clipboard.writeText(item.password);
@@ -132,6 +140,12 @@ function renderVaultList(filter = '') {
     });
     list.appendChild(li);
   });
+}
+
+function normalizeUrl(url) {
+  const trimmed = (url || '').trim();
+  if (!trimmed) return '#';
+  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
 }
 
 function escapeHtml(str) {
