@@ -258,6 +258,10 @@ button {
   border: 1px solid var(--border);
   font-size: 12px;
   padding: 6px 10px;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 8px;
 }
 
 .icon-btn:hover { color: var(--text); }
