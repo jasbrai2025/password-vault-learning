@@ -46,6 +46,7 @@ $('#loginForm').addEventListener('submit', async (e) => {
       body: JSON.stringify({ username: fd.get('username'), password: fd.get('password') }),
     });
     onLoggedIn(data);
+    if ($('#enableBio').checked) enableBiometric(fd.get('username'), fd.get('password'));
   } catch (err) {
     $('#loginError').textContent = err.message;
   }
@@ -239,6 +240,103 @@ $('#deleteItemBtn').addEventListener('click', async () => {
     showToast(err.message);
   }
 });
+
+// ---------- Biometric (WebAuthn PRF) ----------
+const BIO_KEY = 'vault_bio';
+const b64 = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)));
+const unb64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+const bioSupported = !!window.PublicKeyCredential;
+
+function refreshBioUi() {
+  const has = !!localStorage.getItem(BIO_KEY);
+  $('#bioEnableRow').classList.toggle('hidden', !bioSupported);
+  $('#bioLoginBtn').classList.toggle('hidden', !has);
+  $('#bioOffBtn').classList.toggle('hidden', !has);
+}
+
+async function bioKeyFromCredential(credId, salt) {
+  const cred = await navigator.credentials.get({
+    publicKey: {
+      challenge: crypto.getRandomValues(new Uint8Array(32)),
+      allowCredentials: [{ type: 'public-key', id: credId }],
+      userVerification: 'required',
+      timeout: 60000,
+      extensions: { prf: { eval: { first: salt } } },
+    },
+  });
+  const out = cred.getClientExtensionResults().prf?.results?.first;
+  if (!out) throw new Error('यो device/browser ले biometric key समर्थन गर्दैन');
+  return crypto.subtle.importKey('raw', out, 'AES-GCM', false, ['encrypt', 'decrypt']);
+}
+
+async function enableBiometric(user, password) {
+  try {
+    const cred = await navigator.credentials.create({
+      publicKey: {
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        rp: { name: 'Vault' },
+        user: { id: crypto.getRandomValues(new Uint8Array(16)), name: user, displayName: user },
+        pubKeyCredParams: [
+          { type: 'public-key', alg: -7 },
+          { type: 'public-key', alg: -257 },
+        ],
+        authenticatorSelection: {
+          authenticatorAttachment: 'platform',
+          userVerification: 'required',
+          residentKey: 'preferred',
+        },
+        timeout: 60000,
+        extensions: { prf: {} },
+      },
+    });
+    if (!cred.getClientExtensionResults().prf?.enabled) {
+      throw new Error('यो device ले biometric key समर्थन गर्दैन');
+    }
+    const credId = new Uint8Array(cred.rawId);
+    const salt = crypto.getRandomValues(new Uint8Array(32));
+    const key = await bioKeyFromCredential(credId, salt);
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const ct = await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv },
+      key,
+      new TextEncoder().encode(JSON.stringify({ username: user, password }))
+    );
+    localStorage.setItem(
+      BIO_KEY,
+      JSON.stringify({ credId: b64(credId), salt: b64(salt), iv: b64(iv), ct: b64(ct) })
+    );
+    refreshBioUi();
+    showToast('Biometric खुल्यो');
+  } catch (err) {
+    showToast('Biometric खुलेन: ' + err.message);
+  }
+}
+
+async function bioLogin() {
+  $('#loginError').textContent = '';
+  try {
+    const s = JSON.parse(localStorage.getItem(BIO_KEY));
+    const key = await bioKeyFromCredential(unb64(s.credId), unb64(s.salt));
+    const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(s.iv) }, key, unb64(s.ct));
+    const { username: u, password } = JSON.parse(new TextDecoder().decode(plain));
+    const data = await api('/api/login', {
+      method: 'POST',
+      body: JSON.stringify({ username: u, password }),
+    });
+    onLoggedIn(data);
+  } catch (err) {
+    $('#loginError').textContent = err.message;
+  }
+}
+
+$('#bioLoginBtn').addEventListener('click', bioLogin);
+$('#bioOffBtn').addEventListener('click', () => {
+  localStorage.removeItem(BIO_KEY);
+  refreshBioUi();
+  showToast('Biometric बन्द भयो');
+});
+$('#logoutBtn').addEventListener('click', refreshBioUi);
+refreshBioUi();
 
 // ---------- Init ----------
 if (token && username) {
