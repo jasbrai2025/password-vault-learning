@@ -28,7 +28,13 @@
       <label>Master Password
         <input type="password" name="password" autocomplete="current-password" required>
       </label>
+            <label id="bioEnableRow" class="hidden" style="display:flex;gap:8px;align-items:center;">
+        <input type="checkbox" id="enableBio" style="width:auto;">
+        यो device मा biometric खोल्नुहोस्
+      </label>
       <button type="submit" class="primary">लगइन गर्नुहोस्</button>
+      <button type="button" id="bioLoginBtn" class="ghost hidden">🔐 Biometric बाट लगइन</button>
+      <button type="button" id="bioOffBtn" class="ghost hidden">Biometric बन्द गर्नुहोस्</button>
       <p class="error" id="loginError"></p>
     </form>
 
