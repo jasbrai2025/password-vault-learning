@@ -236,3 +236,13 @@ app.delete('/api/vault/:id', authMiddleware, async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Password vault server running on port ${PORT}`);
 });
+
+app.get('/api/health', async (req, res) => {
+  try {
+    const { error } = await supabase.from('users').select('id').limit(1);
+    if (error) return serverError(res, error);
+    res.json({ ok: true });
+  } catch (err) {
+    serverError(res, err);
+  }
+});
